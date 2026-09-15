@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.http import JsonResponse
-from django.urls import path
+from django.urls import include, path
 
 def api_health(_request):
     return JsonResponse({"status": "ok", "service": "secure-document-management-api"})
@@ -24,4 +24,5 @@ def api_health(_request):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/health/", api_health, name="api-health"),
+    path("api/auth/", include("apps.authentication.urls")),
 ]

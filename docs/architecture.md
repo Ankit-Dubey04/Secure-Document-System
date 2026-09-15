@@ -4,7 +4,7 @@
 
 The project uses a modular Django monolith with Django REST Framework at its API boundary and PostgreSQL as its system of record. It is intentionally separated by responsibility:
 
-- `authentication`: user identity, roles, login/JWT flows (JWT pending).
+- `authentication`: user identity, JWT login/refresh/logout/profile APIs, and reusable role policies.
 - `documents`: document metadata, encrypted storage, and authorization (pending).
 - `audit`: append-only, hash-linked operational records (pending).
 - `security`: authorization policies and security events (pending).
@@ -18,6 +18,6 @@ The backend has successfully connected to the configured local PostgreSQL server
 
 ## Request path
 
-`Client → Django URL routing → DRF view (future) → authorization check → domain app → PostgreSQL/encrypted storage (future) → audit event (future)`
+`Client → Django URL routing → DRF JWT authentication → active-account/RBAC permission → domain app → PostgreSQL/encrypted storage (future) → audit event (future)`
 
-Each sensitive future request will authenticate, authorize, validate input, execute the narrow operation, and emit an audit event. The health route is the only current public endpoint.
+JWT access tokens authenticate protected requests. `IsActiveUser` requires that the corresponding user record is still active, while role-specific policies build on that condition. The Simple JWT blacklist tables persist revoked refresh-token records. Login and token refresh are public by necessity; the health route remains public for readiness checks.

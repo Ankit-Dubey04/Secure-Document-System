@@ -29,3 +29,21 @@
 **Current status:** Completed.
 
 **Next steps:** Begin Phase 2 with JWT access/refresh authentication, registration/login/profile APIs, and role-based authorization tests.
+
+## 2026-09-15 — Phase 2 JWT authentication and RBAC
+
+**Feature implemented:** Added email/password JWT login, access-token refresh, refresh-token logout/blacklisting, current-user profile retrieval, and a minimal administrator-only user list. Added reusable active-account and role permission classes for this and future modules.
+
+**Files created or modified:** `backend/config/settings.py`, `backend/config/urls.py`, `backend/apps/authentication/{admin.py,permissions.py,serializers.py,urls.py,views.py,tests.py}`, `backend/requirements.txt`, `.env.example`, `README.md`, and `docs/{architecture.md,security.md,api-documentation.md}`.
+
+**Technical decisions:** DRF Simple JWT 5.5.1 is used rather than a custom token implementation. JWT signing uses Django's environment-configured secret key; a fixed source-controlled fallback was removed. Token lifetimes are configurable through non-secret environment variables. Refresh-token rotation and blacklist support are enabled. `IsActiveUser` provides continuous application-state validation in addition to JWT validation, and `RolePermission` subclasses centralize RBAC instead of placing raw role checks in views.
+
+**How it works:** `POST /api/auth/login/` validates email/password with Django and returns an access/refresh pair. JWT-authenticated active users can use `/me/`; logout blacklists a refresh token. The administrator user-list endpoint uses `IsAdministrator`. Future document/audit/security/anomaly endpoints can use the defined role policy classes directly.
+
+**Testing performed:** `python backend/manage.py test apps.authentication --verbosity 2` passed all 10 tests. It verifies successful and failed login, inactive-account rejection, anonymous protected access, JWT profile retrieval, refresh, logout blacklisting, administrator access, non-administrator denial for Manager/Employee/Auditor, role policy matrix, and absence of passwords in responses. `python backend/manage.py check` passed. `makemigrations --check --dry-run` reported no changes.
+
+**Migration status:** Applied all Simple JWT `token_blacklist` migrations (`0001` through `0013`) to the existing database. No project-owned model migration was needed.
+
+**Current status:** Completed.
+
+**Next steps:** Phase 3 secure document metadata, upload validation, and RBAC-protected document APIs.
