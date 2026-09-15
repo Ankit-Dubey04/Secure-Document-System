@@ -1,3 +1,7 @@
+import base64
+import hashlib
+import os
+
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -8,9 +12,13 @@ from rest_framework.test import APITestCase
 from apps.authentication.models import User
 
 from .models import Document
+from .services.crypto import DocumentDecryptionError, DocumentIntegrityError, EncryptionConfigurationError, decrypt_and_verify, encrypt_plaintext
 
 
-@override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}})
+TEST_ENCRYPTION_KEY = base64.urlsafe_b64encode(os.urandom(32)).decode("ascii")
+
+
+@override_settings(STORAGES={"default": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}, DOCUMENT_ENCRYPTION_KEY=TEST_ENCRYPTION_KEY)
 class DocumentApiTests(APITestCase):
     password = "StrongPass123!"
 
@@ -41,7 +49,8 @@ class DocumentApiTests(APITestCase):
 
     def create_document(self, owner, **overrides):
         file = overrides.pop("file", self.upload())
-        return Document.objects.create(title=overrides.pop("title", "Stored document"), description="", document_type=overrides.pop("document_type", Document.DocumentType.OTHER), classification=overrides.pop("classification", Document.Classification.INTERNAL), owner=owner, updated_by=owner, file=file, original_filename=file.name, file_size=file.size, content_type=file.content_type, **overrides)
+        encrypted = encrypt_plaintext(file.read())
+        return Document.objects.create(title=overrides.pop("title", "Stored document"), description="", document_type=overrides.pop("document_type", Document.DocumentType.OTHER), classification=overrides.pop("classification", Document.Classification.INTERNAL), owner=owner, updated_by=owner, file=SimpleUploadedFile(file.name, encrypted.ciphertext, content_type="application/octet-stream"), original_filename=file.name, file_size=file.size, content_type=file.content_type, plaintext_sha256=encrypted.plaintext_sha256, encryption_nonce=encrypted.nonce, is_encrypted=True, **overrides)
 
     def test_model_records_owner_metadata_and_timestamps(self):
         document = self.create_document(self.employee)
@@ -68,6 +77,10 @@ class DocumentApiTests(APITestCase):
         self.assertEqual(document.owner, self.employee)
         self.assertNotIn("file", response.data)
         self.assertNotIn("private_media", str(response.data))
+        with document.file.open("rb") as encrypted_file:
+            self.assertNotEqual(encrypted_file.read(), b"document")
+        self.assertTrue(document.is_encrypted)
+        self.assertEqual(document.plaintext_sha256, hashlib.sha256(b"document").hexdigest())
 
     def test_rejects_missing_empty_unsupported_or_mismatched_upload(self):
         self.authenticate(self.employee)
@@ -144,3 +157,56 @@ class DocumentApiTests(APITestCase):
         self.assertEqual(self.client.delete(reverse("document-detail", args=[document.id])).status_code, status.HTTP_204_NO_CONTENT)
         document.refresh_from_db()
         self.assertFalse(document.is_active)
+
+    def test_authorized_download_decrypts_and_verifies_plaintext(self):
+        document = self.create_document(self.employee, file=self.upload(content=b"verified plaintext"))
+        self.authenticate(self.employee)
+        response = self.client.get(reverse("document-download", args=[document.id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(b"".join(response.streaming_content), b"verified plaintext")
+        document.refresh_from_db()
+        self.assertIsNotNone(document.integrity_verified_at)
+
+    def test_tampered_ciphertext_never_returns_plaintext(self):
+        document = self.create_document(self.employee, file=self.upload(content=b"do not release"))
+        document.file.save(document.file.name, SimpleUploadedFile("tampered.bin", b"tampered"), save=True)
+        self.authenticate(self.employee)
+        response = self.client.get(reverse("document-download", args=[document.id]))
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertNotIn(b"do not release", response.content)
+
+    def test_unauthorized_user_cannot_download_hidden_document(self):
+        document = self.create_document(self.other_employee, classification=Document.Classification.INTERNAL)
+        self.authenticate(self.employee)
+        self.assertEqual(self.client.get(reverse("document-download", args=[document.id])).status_code, status.HTTP_404_NOT_FOUND)
+
+
+@override_settings(DOCUMENT_ENCRYPTION_KEY=TEST_ENCRYPTION_KEY)
+class CryptoServiceTests(APITestCase):
+    @override_settings(DOCUMENT_ENCRYPTION_KEY=None)
+    def test_missing_key_is_rejected_safely(self):
+        with self.assertRaises(EncryptionConfigurationError):
+            encrypt_plaintext(b"plaintext")
+
+    @override_settings(DOCUMENT_ENCRYPTION_KEY="not-a-valid-aes-key")
+    def test_invalid_key_is_rejected_safely(self):
+        with self.assertRaises(EncryptionConfigurationError):
+            encrypt_plaintext(b"plaintext")
+
+    def test_encryptions_use_unique_nonce_and_decrypt_with_correct_key(self):
+        first = encrypt_plaintext(b"same plaintext")
+        second = encrypt_plaintext(b"same plaintext")
+        self.assertNotEqual(first.nonce, second.nonce)
+        self.assertNotEqual(first.ciphertext, second.ciphertext)
+        self.assertEqual(decrypt_and_verify(first.ciphertext, first.nonce, first.plaintext_sha256), b"same plaintext")
+
+    def test_corruption_wrong_nonce_and_hash_mismatch_are_rejected(self):
+        encrypted = encrypt_plaintext(b"protected")
+        with self.assertRaises(DocumentDecryptionError):
+            decrypt_and_verify(encrypted.ciphertext[:-1] + b"x", encrypted.nonce, encrypted.plaintext_sha256)
+        with self.assertRaises(DocumentDecryptionError):
+            decrypt_and_verify(encrypted.ciphertext, b"0" * 12, encrypted.plaintext_sha256)
+        with self.assertRaises(DocumentIntegrityError):
+            decrypt_and_verify(encrypted.ciphertext, encrypted.nonce, "0" * 64)
+import base64
+import os

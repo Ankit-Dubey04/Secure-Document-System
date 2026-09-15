@@ -4,8 +4,8 @@ An academic full-stack project for securely storing and governing sensitive docu
 
 ## Current status
 
-- **Completed:** Phases 1–3: foundation, JWT/RBAC, and secure document metadata/upload APIs with object-level authorization.
-- **Planned:** Encryption and integrity verification, audit hash chain, anomaly detection, React UI, Docker, and comprehensive deployment tests.
+- **Completed:** Phases 1–4: foundation, JWT/RBAC, secure document management, AES-256-GCM encrypted storage, SHA-256 verification, and secure retrieval.
+- **Planned:** Tamper-evident audit chaining, anomaly detection, React UI, Docker, and deployment tests.
 
 ## Technology stack
 
@@ -59,8 +59,14 @@ Uploads accept PDF, DOC, DOCX, and ODT only, with matching declared MIME type, a
 
 Configuration secrets and database credentials are read from environment variables. `.env` is ignored by Git. `DJANGO_SECRET_KEY` is required outside debug mode; debug-only runs without it receive a process-local random key rather than a source-controlled fallback. The custom user model uses Django password hashing through `set_password`; plaintext passwords are never persisted. Email is the login identifier and role, department, clearance level, activity state, and audit timestamps are stored on the user record.
 
+## Encrypted storage and retrieval
+
+New uploads are SHA-256 hashed as plaintext, encrypted with AES-256-GCM using a fresh 96-bit nonce, and stored only as ciphertext. `GET /api/documents/<uuid>/download/` is JWT- and object-authorization-bound; it decrypts and compares the resulting plaintext hash before returning a download. A failed authenticated decryption or hash check returns no plaintext.
+
+Set `DOCUMENT_ENCRYPTION_KEY` only in the ignored local environment configuration as a Base64-url encoded 32-byte key. Production deployments should use managed secrets, per-key document key wrapping, and rotation rather than a single application key.
+
 ## Known limitations
 
-File contents are not yet encrypted or integrity-hashed, and secure download/streaming is deliberately deferred until those protections are implemented. MIME validation is an allowlist check, not a substitute for malware scanning or deep format inspection.
+The MVP reads plaintext into process memory during encryption/decryption and uses one application-level key. It has no malware scanning, key rotation/KMS, streamed encryption, audit chain, or anomaly detection. Legacy Phase 3 documents remain marked unencrypted and cannot use the secure download endpoint until re-uploaded.
 
 See `docs/` for architecture and data design, and `IMPLEMENTATION_LOG.md` for a chronological record.

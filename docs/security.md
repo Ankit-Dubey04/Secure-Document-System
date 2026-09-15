@@ -19,6 +19,16 @@ All document endpoints require JWT authentication and an active account. The bac
 
 Uploads allow PDF (`application/pdf`), DOC (`application/msword`), DOCX (`application/vnd.openxmlformats-officedocument.wordprocessingml.document`), and ODT (`application/vnd.oasis.opendocument.text`) up to 10 MiB. Empty files, unsupported extensions, and extension/MIME mismatches are rejected. Django normalizes multipart filenames; the API also rejects path separators if present and never uses the client filename for storage paths. Generated names avoid collisions and API serializers do not expose the storage path.
 
-This is a validation baseline only: declared MIME type does not prove file safety, and no malware/content scanning is performed. Files are not encrypted or integrity-hashed until the next security phase. There is intentionally no download endpoint or public media route until authorization-bound secure serving and cryptographic protections are added.
+This is a validation baseline only: declared MIME type does not prove file safety, and no malware/content scanning is performed.
+
+## Phase 4 encryption and integrity controls
+
+The service uses `cryptography` AES-256-GCM (`AES-256-GCM-v1`) for authenticated encryption. Each encryption operation receives a new 12-byte cryptographically random nonce. The Base64-url encoded 32-byte application key is read only from `DOCUMENT_ENCRYPTION_KEY` in the environment; it is not stored in the database, emitted by APIs, documented as a value, or committed.
+
+Before encryption, the service computes a lowercase SHA-256 hash of plaintext. AES-GCM protects ciphertext confidentiality and authenticates encrypted bytes; the stored plaintext SHA-256 is a separate application-level check that confirms successful decryption matches the original uploaded content. The nonce and algorithm identifier are non-secret metadata; the key is secret.
+
+`GET /api/documents/<uuid>/download/` applies existing JWT/RBAC/object filtering before opening storage. It decrypts, compares SHA-256 using a constant-time comparison, and only then returns plaintext. Ciphertext authentication, nonce, configuration, or hash failures return a generic 422 response without plaintext or cryptographic internals. There is no public media route.
+
+The MVP holds file bytes in application memory and uses one configured application key. Production should use a KMS/secrets manager, envelope encryption, key identifiers and rotation, malware scanning, and streaming encryption/decryption. Legacy unencrypted records are intentionally blocked from secure retrieval pending re-upload/migration.
 
 Phase 1 verification confirmed the custom user model is active and password writes use Django's hashing API. The test suite created an isolated test database and removed it after completion; it did not use application document data.

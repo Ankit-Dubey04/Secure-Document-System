@@ -1,10 +1,12 @@
 from pathlib import PurePath
 
+from django.core.files.base import ContentFile
 from rest_framework import serializers
 
 from apps.authentication.models import User
 
 from .models import Document
+from .services.crypto import encrypt_plaintext
 
 
 ALLOWED_UPLOADS = {
@@ -64,11 +66,15 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         upload = validated_data.pop("file")
-        validated_data.update(original_filename=PurePath(upload.name).name, file_size=upload.size, content_type=upload.content_type)
-        return super().create({**validated_data, "file": upload})
+        plaintext = upload.read()
+        encrypted = encrypt_plaintext(plaintext)
+        validated_data.update(original_filename=PurePath(upload.name).name, file_size=len(plaintext), content_type=upload.content_type, plaintext_sha256=encrypted.plaintext_sha256, encryption_nonce=encrypted.nonce, is_encrypted=True)
+        return super().create({**validated_data, "file": ContentFile(encrypted.ciphertext, name=upload.name)})
 
     def update(self, instance, validated_data):
         upload = validated_data.pop("file", None)
         if upload:
-            validated_data.update(file=upload, original_filename=PurePath(upload.name).name, file_size=upload.size, content_type=upload.content_type)
+            plaintext = upload.read()
+            encrypted = encrypt_plaintext(plaintext)
+            validated_data.update(file=ContentFile(encrypted.ciphertext, name=upload.name), original_filename=PurePath(upload.name).name, file_size=len(plaintext), content_type=upload.content_type, plaintext_sha256=encrypted.plaintext_sha256, encryption_nonce=encrypted.nonce, is_encrypted=True, integrity_verified_at=None)
         return super().update(instance, validated_data)

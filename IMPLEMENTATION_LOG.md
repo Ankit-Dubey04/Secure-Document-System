@@ -65,3 +65,21 @@
 **Current status:** Completed.
 
 **Next steps:** Phase 4 authenticated encrypted document storage, SHA-256 integrity verification, and authorization-bound download delivery.
+
+## 2026-09-15 — Phase 4 encrypted storage and integrity verification
+
+**Feature implemented:** Added AES-256-GCM encrypted-at-rest document uploads, SHA-256 plaintext integrity metadata, and JWT/RBAC/object-authorized download after authenticated decryption and hash verification.
+
+**Files created or modified:** `backend/apps/documents/services/{__init__.py,crypto.py}`, document model/serializer/view/URL/tests, `documents.0002_document_encryption_algorithm_and_more.py`, settings, `.env.example`, requirements, README, implementation log, and architecture/security/database/API documentation.
+
+**Technical decisions:** `cryptography==50.0.1` supplies AES-GCM; no custom crypto is used. A Base64-url encoded 32-byte key is loaded from the ignored environment configuration. Each encryption uses a fresh 12-byte nonce. The file field stores ciphertext while the database stores the plaintext SHA-256, algorithm identifier, nonce, encryption state, and last successful verification timestamp. The key is never stored in a model or returned by an API.
+
+**How it works:** Validated uploads are read into memory, hashed, encrypted, then stored via the private Django storage backend. Downloads are first limited by the existing readable-document queryset; ciphertext is then decrypted and hash-verified with constant-time comparison. Any encryption configuration, authentication, or integrity failure returns a generic 422 response and no plaintext.
+
+**Testing performed:** `python backend/manage.py test apps.documents --noinput --verbosity 1` passed 19 tests, covering missing/invalid key handling, AES-GCM round trips, nonce/ciphertext uniqueness, wrong nonce/ciphertext/hash rejection, encrypted stored bytes, authorized download, tampering prevention, and existing Phase 3 access rules. `python backend/manage.py test apps.authentication --noinput --verbosity 1` passed all 10 Phase 2 tests. `manage.py check` passed; `makemigrations --check --dry-run` found no changes; `migrate --plan` found no pending operations.
+
+**Migration status:** Created and applied `documents.0002_document_encryption_algorithm_and_more`.
+
+**Current status:** Completed.
+
+**Next steps:** Run full regression checks, then implement Phase 5 tamper-evident audit logging.

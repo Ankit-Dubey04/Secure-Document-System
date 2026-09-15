@@ -26,6 +26,8 @@ Every document has a protected foreign-key owner and optional protected `updated
 
 Classification choices are Public, Internal, Confidential, and Restricted. Types are FIR, Charge Sheet, Witness Statement, Forensic Report, Court Filing, and Other. Client requests cannot set owner, file-derived metadata, timestamps, or the active state through the serializer.
 
+Phase 4 adds `plaintext_sha256` (lowercase 64-character original-content digest), `encryption_algorithm`, `encryption_nonce`, `is_encrypted`, and `integrity_verified_at`. The existing file reference now points to AES-GCM ciphertext, not plaintext. The nonce and algorithm are non-secret metadata necessary for decryption; the encryption key is not a database field. Existing Phase 3 records default to unencrypted and are not eligible for secure download until reprocessed.
+
 ## Planned relations
 
 Future explicit document permissions, audit entries, security events, activities, and anomaly results will reference users and resources through foreign keys or controlled identifiers.

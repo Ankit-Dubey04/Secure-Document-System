@@ -62,4 +62,5 @@ USE_TZ = True
 STATIC_URL = "static/"
 MEDIA_ROOT = Path(os.environ.get("DOCUMENT_STORAGE_ROOT", str(PROJECT_ROOT / "private_media")))
 MEDIA_URL = "/private-media/"
+DOCUMENT_ENCRYPTION_KEY = os.environ.get("DOCUMENT_ENCRYPTION_KEY")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

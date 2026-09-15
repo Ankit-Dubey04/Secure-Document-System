@@ -15,6 +15,7 @@
 | `/api/documents/<uuid>/` | GET | Active JWT + object policy | Returns authorized metadata only; no storage path or file download URL. |
 | `/api/documents/<uuid>/` | PUT/PATCH | Active JWT + manager policy | Updates authorized metadata/file. Employee owners may manage only their own documents. |
 | `/api/documents/<uuid>/` | DELETE | Active JWT + manager policy | Soft-deletes an authorized document; returns 204. |
+| `/api/documents/<uuid>/download/` | GET | Active JWT + object policy | Decrypts and SHA-256 verifies an encrypted document before returning an attachment. Returns generic 422 without plaintext on cryptographic/integrity failure. |
 
 ## Planned API groups
 
