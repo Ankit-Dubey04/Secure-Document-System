@@ -2,7 +2,7 @@
 
 ## Current schema
 
-The initial migration creates the `authentication_user` table in the existing PostgreSQL database `secure_document_db`.
+The initial migration creates the `authentication_user` table in the existing PostgreSQL database `secure_document_db`. Migration `authentication.0001_initial` is applied and the connection was verified through Django's database backend.
 
 | Field | Purpose |
 | --- | --- |

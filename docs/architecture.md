@@ -12,6 +12,10 @@ The project uses a modular Django monolith with Django REST Framework at its API
 
 Configuration is read from the process environment, with a local `.env` convenience loader that never overrides supplied environment variables. The local `.env` is ignored by Git.
 
+## Verification status
+
+The backend has successfully connected to the configured local PostgreSQL server and the initial custom-user migration is applied. Phase 1 is complete. Database-backed authentication tests use Django's disposable `test_secure_document_db` database rather than modifying application data.
+
 ## Request path
 
 `Client → Django URL routing → DRF view (future) → authorization check → domain app → PostgreSQL/encrypted storage (future) → audit event (future)`

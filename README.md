@@ -4,9 +4,9 @@ An academic full-stack project for securely storing and governing sensitive docu
 
 ## Current status
 
-- **Completed:** Phase 1 project scaffolding; PostgreSQL configuration via environment variables; custom email-based user model; Django REST Framework foundation; initial user migration.
-- **Blocked:** Applying migrations and database-backed tests require the local `DATABASE_PASSWORD` to be supplied through the ignored `.env` file or environment.
-- **Planned:** JWT authentication/RBAC, document storage and encryption, audit hash chain, anomaly detection, React UI, Docker, and comprehensive tests.
+- **Completed:** Phase 1 project scaffolding; verified PostgreSQL configuration via environment variables; custom email-based user model; Django REST Framework foundation; applied initial user migration; user-model test.
+- **In progress:** Phase 2 authentication and role-based access control.
+- **Planned:** Document storage and encryption, audit hash chain, anomaly detection, React UI, Docker, and comprehensive tests.
 
 ## Technology stack
 
@@ -50,6 +50,6 @@ Configuration secrets and database credentials are read from environment variabl
 
 ## Known limitations
 
-Database migration and database-backed testing have not been verified in this workspace because no local PostgreSQL password configuration exists. No document endpoints, encryption, audit chaining, or machine-learning claims have been implemented yet.
+The PostgreSQL connection, applied user migration, and user-model test have been verified. No document endpoints, encryption, audit chaining, or machine-learning claims have been implemented yet.
 
 See `docs/` for architecture and data design, and `IMPLEMENTATION_LOG.md` for a chronological record.
