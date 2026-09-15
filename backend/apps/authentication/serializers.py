@@ -4,6 +4,8 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User
+from apps.audit.models import AuditLog
+from apps.audit.services.audit import record_event
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -23,9 +25,12 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         password = attrs.get("password")
         user = authenticate(request=self.context.get("request"), email=email, password=password)
         if not user or not user.account_active:
+            record_event(AuditLog.EventType.LOGIN_FAILURE, AuditLog.Outcome.FAILURE, metadata={"attempted_email": email}, request=self.context.get("request"))
             raise AuthenticationFailed("No active account found with the given credentials.")
         self.user = user
-        return super().validate(attrs)
+        data = super().validate(attrs)
+        record_event(AuditLog.EventType.LOGIN_SUCCESS, AuditLog.Outcome.SUCCESS, user, request=self.context.get("request"))
+        return data
 
 
 class LogoutSerializer(serializers.Serializer):

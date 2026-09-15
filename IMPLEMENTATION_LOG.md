@@ -83,3 +83,17 @@
 **Current status:** Completed.
 
 **Next steps:** Run full regression checks, then implement Phase 5 tamper-evident audit logging.
+
+## 2026-09-15 — Phase 5 tamper-evident audit logging
+
+**Feature implemented:** Added append-only server-generated audit events, canonical SHA-256 hash chaining, chain verification, Administrator/Auditor audit APIs, and document/logout audit hooks.
+
+**Files created or modified:** Audit models, services, serializers, views, URLs, tests, initial migration; root URLs; document and authentication views; README and security/database/API docs.
+
+**Technical decisions:** A singleton `AuditChainState` row is locked inside an atomic transaction to serialize normal appends. Canonical JSON uses sorted keys and compact separators. Selected metadata is recursively sanitized to omit token, password, key, cookie, and secret fields. No public event-creation, edit, or delete API exists.
+
+**Testing performed:** `python backend/manage.py test apps.audit --noinput --verbosity 1` passed 10 tests for automatic authentication/document events, denied access, metadata sanitization, chain tampering/link/state detection, API RBAC, and admin immutability. `python backend/manage.py test apps.authentication --noinput --verbosity 1` passed 10 tests; `python backend/manage.py test apps.documents --noinput --verbosity 1` passed 19 tests. The project-level test discovery command reports zero tests because this layout uses app-label test invocation; all three app suites were run explicitly. System checks and migration planning passed.
+
+**Migration status:** Created and applied `audit.0001_initial`.
+
+**Current status:** Completed and ready for a user-approved v0.6.0 release. Phase 2 authentication regression passed 10 tests; Phase 3/4 document and cryptography regression passed 19 tests; Phase 5 audit tests passed 10 tests. Django checks passed with no pending migration operations.

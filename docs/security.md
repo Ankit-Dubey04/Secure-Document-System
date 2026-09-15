@@ -31,4 +31,10 @@ Before encryption, the service computes a lowercase SHA-256 hash of plaintext. A
 
 The MVP holds file bytes in application memory and uses one configured application key. Production should use a KMS/secrets manager, envelope encryption, key identifiers and rotation, malware scanning, and streaming encryption/decryption. Legacy unencrypted records are intentionally blocked from secure retrieval pending re-upload/migration.
 
+## Phase 5 audit chain
+
+Server-side audit events are canonical JSON (sorted keys, compact separators, UTC ISO timestamps) hashed as `SHA-256(canonical_event_data)`, where canonical data includes `previous_hash`. The first event uses `GENESIS`; each next event links to the prior hash. A locked singleton state row serializes normal application writes and is updated in the same transaction as the event. Verification detects altered event fields, altered hashes, broken genesis/previous links, missing/interrupted events, and a stale chain-state hash. Audit access and verification are Administrator/Auditor-only; Django admin makes logs and chain state read-only.
+
+Authentication success/failure, refresh, logout, document creation/view/update/delete/download, encrypted retrieval failures, and denied document/audit access are server-generated audit events. Metadata is selected by callers and recursively removes keys containing password, token, authorization, cookie, key, secret, refresh, or credential terms; request bodies and sensitive headers are never copied. Direct `REMOTE_ADDR` is used for MVP IP context—reverse-proxy header trust must be explicitly configured in production. This is tamper-evident—not tamper-proof against a privileged database actor able to rewrite all history. Production should add external checkpoints, WORM storage, signatures, and SIEM integration.
+
 Phase 1 verification confirmed the custom user model is active and password writes use Django's hashing API. The test suite created an isolated test database and removed it after completion; it did not use application document data.

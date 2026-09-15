@@ -4,8 +4,8 @@ An academic full-stack project for securely storing and governing sensitive docu
 
 ## Current status
 
-- **Completed:** Phases 1–4: foundation, JWT/RBAC, secure document management, AES-256-GCM encrypted storage, SHA-256 verification, and secure retrieval.
-- **Planned:** Tamper-evident audit chaining, anomaly detection, React UI, Docker, and deployment tests.
+- **Completed:** Phases 1–5: foundation, JWT/RBAC, encrypted document retrieval, and tamper-evident audit logging.
+- **Planned:** Anomaly detection, React UI, Docker, and deployment tests.
 
 ## Technology stack
 
@@ -65,8 +65,12 @@ New uploads are SHA-256 hashed as plaintext, encrypted with AES-256-GCM using a 
 
 Set `DOCUMENT_ENCRYPTION_KEY` only in the ignored local environment configuration as a Base64-url encoded 32-byte key. Production deployments should use managed secrets, per-key document key wrapping, and rotation rather than a single application key.
 
+## Tamper-evident auditing
+
+Meaningful authentication and document actions are recorded by a server-side append-only audit service. Each event has deterministic canonical JSON and a SHA-256 hash linked to the immediately preceding event, beginning with `GENESIS`. Administrator and Auditor roles can list events and verify the chain through `/api/audit/` and `/api/audit/verify/`; there are no write, update, or delete audit APIs. Audit records and chain state are read-only in Django admin.
+
 ## Known limitations
 
-The MVP reads plaintext into process memory during encryption/decryption and uses one application-level key. It has no malware scanning, key rotation/KMS, streamed encryption, audit chain, or anomaly detection. Legacy Phase 3 documents remain marked unencrypted and cannot use the secure download endpoint until re-uploaded.
+The MVP reads plaintext into process memory during encryption/decryption and uses one application-level key. The audit hash chain is tamper-evident rather than immutable against a database administrator who can rewrite both events and chain state. It has no malware scanning, key rotation/KMS, streamed encryption, external audit checkpointing, or anomaly detection. Legacy Phase 3 documents remain marked unencrypted and cannot use the secure download endpoint until re-uploaded.
 
 See `docs/` for architecture and data design, and `IMPLEMENTATION_LOG.md` for a chronological record.

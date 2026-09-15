@@ -28,6 +28,10 @@ Classification choices are Public, Internal, Confidential, and Restricted. Types
 
 Phase 4 adds `plaintext_sha256` (lowercase 64-character original-content digest), `encryption_algorithm`, `encryption_nonce`, `is_encrypted`, and `integrity_verified_at`. The existing file reference now points to AES-GCM ciphertext, not plaintext. The nonce and algorithm are non-secret metadata necessary for decryption; the encryption key is not a database field. Existing Phase 3 records default to unencrypted and are not eligible for secure download until reprocessed.
 
+`audit_auditlog` stores UUID events, timestamp, optional user, controlled event/outcome, resource fields, direct remote IP, bounded user agent, sanitized selected metadata, and previous/current chain hashes. `audit_auditchainstate` is a single locked state row used to serialize ordinary appends.
+
+Audit records are application-append-only: no create/update/delete API exists, and Django admin disables normal mutations for both the event and state models. Database-level append-only permissions are not part of this MVP.
+
 ## Planned relations
 
 Future explicit document permissions, audit entries, security events, activities, and anomaly results will reference users and resources through foreign keys or controlled identifiers.
