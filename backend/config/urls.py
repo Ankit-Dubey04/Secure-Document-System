@@ -25,4 +25,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/health/", api_health, name="api-health"),
     path("api/auth/", include("apps.authentication.urls")),
+    path("api/documents/", include("apps.documents.urls")),
 ]

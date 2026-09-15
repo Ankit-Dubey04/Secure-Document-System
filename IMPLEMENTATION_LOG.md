@@ -26,7 +26,7 @@
 
 **Testing performed:** `python backend/manage.py check` passed. `showmigrations authentication` confirmed `0001_initial` is applied. Django successfully connected to PostgreSQL database `secure_document_db`, and `AUTH_USER_MODEL` resolved to `authentication.User`. `python backend/manage.py test apps.authentication --verbosity 2` passed (1 test); Django created and destroyed the isolated `test_secure_document_db` test database successfully.
 
-**Current status:** Completed.
+**Current status:** Completed. After the local `secure_document_db` was restored, final verification confirmed the live PostgreSQL connection, no planned migration operations, all 10 Phase 2 tests, and all 12 Phase 3 tests. The isolated Django test database was recreated and removed by the test runner; the application database was not recreated or deleted.
 
 **Next steps:** Begin Phase 2 with JWT access/refresh authentication, registration/login/profile APIs, and role-based authorization tests.
 
@@ -47,3 +47,21 @@
 **Current status:** Completed.
 
 **Next steps:** Phase 3 secure document metadata, upload validation, and RBAC-protected document APIs.
+
+## 2026-09-15 — Phase 3 secure document management
+
+**Feature implemented:** Added the `Document` model, private generated file storage references, validated multipart uploads, document metadata APIs, soft deletion, and role/object-level document authorization.
+
+**Files created or modified:** `backend/apps/documents/{models.py,admin.py,permissions.py,serializers.py,urls.py,views.py,tests.py,migrations/0001_initial.py}`, `backend/config/{settings.py,urls.py}`, `.env.example`, `README.md`, and `docs/{architecture.md,database.md,security.md,api-documentation.md}`.
+
+**Technical decisions:** Document IDs are UUIDs; file bytes use Django storage rather than PostgreSQL. Storage filenames are generated UUID names and are never client paths. Supported formats are PDF, DOC, DOCX, and ODT, with declared MIME/extension matching and a 10 MiB limit. Soft deletion retains metadata for the future audit phase. No package was added; Django and DRF provide the required model, file, and validation primitives.
+
+**How it works:** The document API uses the JWT identity as owner and derives file metadata server-side. Visibility is enforced in filtered querysets before detail lookup. Administrators can manage all documents; Managers their non-empty department; Employees their own (and can read Public documents); Auditors can read non-Restricted documents but cannot modify them. No file URL is serialized and no media URL route is enabled.
+
+**Testing performed:** `python backend/manage.py test apps.documents --keepdb --verbosity 1` passed 12 tests, then the disposable `test_secure_document_db` database was removed. `python backend/manage.py test apps.authentication --keepdb --verbosity 1` passed all 10 Phase 2 tests. Tests cover model metadata/choices, valid and invalid uploads, filename normalization, collisions, JWT protection, owner assignment, listings, role policy, IDOR prevention, and modification/deletion restrictions. `manage.py check` passed; `makemigrations --check --dry-run` found no changes; `migrate --plan` found no pending operations.
+
+**Migration status:** Created and applied `documents.0001_initial`.
+
+**Current status:** Completed.
+
+**Next steps:** Phase 4 authenticated encrypted document storage, SHA-256 integrity verification, and authorization-bound download delivery.

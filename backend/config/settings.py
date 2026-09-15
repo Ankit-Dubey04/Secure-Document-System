@@ -60,4 +60,6 @@ TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
+MEDIA_ROOT = Path(os.environ.get("DOCUMENT_STORAGE_ROOT", str(PROJECT_ROOT / "private_media")))
+MEDIA_URL = "/private-media/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

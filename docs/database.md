@@ -18,6 +18,14 @@ The initial migration creates the `authentication_user` table in the existing Po
 
 Django's inherited authorization fields (`is_staff`, `is_superuser`, groups, and permissions) remain available for administrative use. `email` is unique and replaces Django's username as the authentication identifier.
 
+## Document schema
+
+`documents_document` uses a UUID primary key to make identifiers non-sequential. It stores title, optional description, controlled document type and classification choices, the private storage reference, original filename, file size, declared content type, active/deleted state, and creation/update timestamps.
+
+Every document has a protected foreign-key owner and optional protected `updated_by` user. Indexes support owner/active and classification/active authorization queries. The binary is not stored in PostgreSQL. Soft deletion sets `is_active=False`, preserving metadata for later audit capabilities while excluding the document from all normal querysets.
+
+Classification choices are Public, Internal, Confidential, and Restricted. Types are FIR, Charge Sheet, Witness Statement, Forensic Report, Court Filing, and Other. Client requests cannot set owner, file-derived metadata, timestamps, or the active state through the serializer.
+
 ## Planned relations
 
-Documents will belong to an owner and department; document permissions will represent explicit grants. Audit entries, security events, activities, and anomaly results will reference users and resources through foreign keys or controlled identifiers. These tables are deliberately deferred until the custom user migration has been applied successfully.
+Future explicit document permissions, audit entries, security events, activities, and anomaly results will reference users and resources through foreign keys or controlled identifiers.

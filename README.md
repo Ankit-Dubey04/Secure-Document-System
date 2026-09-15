@@ -4,8 +4,8 @@ An academic full-stack project for securely storing and governing sensitive docu
 
 ## Current status
 
-- **Completed:** Phase 1 foundation and Phase 2 JWT authentication/RBAC, including token refresh, refresh-token blacklisting on logout, authenticated profiles, administrator user listing, and reusable role policy classes.
-- **Planned:** Document storage and encryption, audit hash chain, anomaly detection, React UI, Docker, and comprehensive tests.
+- **Completed:** Phases 1–3: foundation, JWT/RBAC, and secure document metadata/upload APIs with object-level authorization.
+- **Planned:** Encryption and integrity verification, audit hash chain, anomaly detection, React UI, Docker, and comprehensive deployment tests.
 
 ## Technology stack
 
@@ -22,7 +22,7 @@ An academic full-stack project for securely storing and governing sensitive docu
 ```text
 backend/                 Django project and applications
   apps/authentication/   Custom user identity and future JWT flows
-  apps/documents/        Secure document lifecycle (planned)
+  apps/documents/        Secure document metadata, upload validation, and access control
   apps/audit/            Tamper-evident audit records (planned)
   apps/security/         Security policy/events (planned)
   apps/anomaly_detection/ ML anomaly pipeline (planned)
@@ -49,12 +49,18 @@ Use `POST /api/auth/login/` with `email` and `password` to receive access and re
 
 Administrators may list user profiles. Reusable permissions define the following Phase 2 policy for later modules: all active roles can access permitted documents; Managers and Administrators can manage documents; Administrators and Auditors can read audit logs, security data, and anomaly data. Current document, audit, security, and anomaly endpoints are intentionally not exposed yet.
 
+## Secure document management
+
+`/api/documents/` supports authenticated document creation and authorized listing; `/api/documents/<uuid>/` supports authorized retrieval, updates, and soft deletion. Files are stored through Django storage under generated server-side names, while PostgreSQL stores metadata only. No media route is registered, and Phase 3 does not expose download URLs.
+
+Uploads accept PDF, DOC, DOCX, and ODT only, with matching declared MIME type, a non-empty payload, a 10 MiB maximum, and a filename free of path components. Client owner fields are ignored; the JWT principal is always recorded as owner. See the API and security documentation for the role/object policy.
+
 ## Security baseline
 
 Configuration secrets and database credentials are read from environment variables. `.env` is ignored by Git. `DJANGO_SECRET_KEY` is required outside debug mode; debug-only runs without it receive a process-local random key rather than a source-controlled fallback. The custom user model uses Django password hashing through `set_password`; plaintext passwords are never persisted. Email is the login identifier and role, department, clearance level, activity state, and audit timestamps are stored on the user record.
 
 ## Known limitations
 
-The PostgreSQL connection, applied migrations, and authentication API test suite have been verified. Token revocation depends on the database-backed Simple JWT blacklist. No document endpoints, encryption, audit chaining, or machine-learning claims have been implemented yet.
+File contents are not yet encrypted or integrity-hashed, and secure download/streaming is deliberately deferred until those protections are implemented. MIME validation is an allowlist check, not a substitute for malware scanning or deep format inspection.
 
 See `docs/` for architecture and data design, and `IMPLEMENTATION_LOG.md` for a chronological record.
