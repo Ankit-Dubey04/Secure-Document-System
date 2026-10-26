@@ -27,7 +27,7 @@ Audit APIs are read-only. Unauthorized authenticated audit requests are recorded
 
 The anomaly run response contains `trained` with processed result count or `insufficient_data` when fewer than five active-user profiles exist. For trained data, lower scores are more anomalous and negative scores have the `ANOMALOUS` classification. Result data contains aggregate feature counts only. Invalid/non-numeric windows, or values outside 1–90, return 400; unauthenticated and unauthorized callers receive 401/403.
 
-The UI prototype consumes the documented authentication, documents, audit, and admin-only users endpoints directly. It does not add a dashboard aggregation API: document counts are derived client-side from the caller's authorized document list, and audit/security panels use only the caller-authorized audit list.
+The React dashboard consumes the documented authentication, documents, audit, anomaly, and administrator-only users endpoints directly. It does not add a dashboard aggregation API or new backend endpoint. Local development uses a Vite `/api` proxy; production should use a same-origin reverse proxy. See `docs/frontend.md` for the token lifecycle and deployment constraints.
 
 ## Planned API groups
 

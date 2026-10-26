@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@theme { --font-sans: "Inter", "Segoe UI", sans-serif; }
+body { margin: 0; min-width: 320px; background: #020617; }
+button, input, select, textarea { font: inherit; }
+.input { display: block; width: 100%; margin-top: .35rem; border: 1px solid #475569; border-radius: .5rem; background: #020617; padding: .65rem .75rem; color: #f8fafc; outline: none; }
+.input:focus { border-color: #22d3ee; box-shadow: 0 0 0 2px rgb(34 211 238 / .16); }
+.label { margin-bottom: .25rem; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #94a3b8; }

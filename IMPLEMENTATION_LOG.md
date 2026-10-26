@@ -125,3 +125,17 @@
 **Testing performed:** `manage.py test apps.anomaly_detection --noinput` passed 5 tests for feature extraction, empty/insufficient data, malformed window input, reproducibility, anomalous-score semantics, idempotent result storage, authentication/RBAC, safe API output, and analysis-run audit recording. Final regression also passed audit (10), authentication (10), and document (19) app suites. Project-level discovery found zero tests because this layout uses app-label test discovery. Django checks passed; migration drift checks found no changes.
 
 **Migration status:** Created and applied `anomaly_detection.0001_initial` to the local database.
+
+## 2026-10-26 — Phase 7 React security dashboard
+
+**Feature implemented:** Added the independent `frontend/` React 19 + TypeScript Vite application, styled with Tailwind CSS. It provides a responsive, role-aware security dashboard for existing authentication, documents, audit, anomaly, profile, and user-directory APIs. The earlier Django-template UI remains untouched as a legacy prototype.
+
+**Authentication and security decisions:** The reusable API client uses the real bearer-token API, keeps tokens in browser `sessionStorage` only, refreshes once after a 401, clears the session after a failed refresh, applies a request timeout, and never places tokens in URLs or logs. The backend has no cookie-auth mode, so session storage is documented as an XSS risk rather than presented as a complete mitigation. Vite's local `/api` proxy avoids broad Django CORS configuration; production should use a same-origin reverse proxy.
+
+**Pages and behavior:** Login/logout, protected role-aware navigation, current-user profile, authorized document search/upload/download/update/soft deletion with confirmation and backend error display, audit table and live chain verification, anomaly status/run/results with explicit insufficient-data messaging, and administrator-only user listing. Frontend visibility is only a usability layer; backend RBAC remains authoritative.
+
+**Testing performed:** `npm test` passed 7 frontend tests for session-only token storage, access-token refresh/retry, failed-refresh cleanup, role-aware navigation, multipart document request shape, and secure-download error handling. `npm run build` passed with TypeScript checking and Vite production bundling. Backend regressions passed: authentication 10 tests, documents 19, audit 10, and anomaly detection 5. Django system and migration checks are recorded with final verification.
+
+**Backend impact:** No backend source, migration, CORS, CSRF, API-contract, authentication, or permission change was required.
+
+**Known limitations:** There are no browser end-to-end tests against a live Django server, no secure-cookie JWT mode, and no frontend automated accessibility audit. The separate legacy Django-template UI has deliberately not been deleted.

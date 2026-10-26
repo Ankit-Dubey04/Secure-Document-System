@@ -5,7 +5,7 @@ An academic full-stack project for securely storing and governing sensitive docu
 ## Current status
 
 - **Completed:** Phases 1–6: foundation, JWT/RBAC, encrypted document retrieval, tamper-evident audit logging, and advisory anomaly detection.
-- **In progress:** Django-template UI prototype for presentation.
+- **Completed:** Phase 7 React/Vite security dashboard frontend.
 - **Planned:** Docker and deployment tests.
 
 ## Technology stack
@@ -15,7 +15,7 @@ An academic full-stack project for securely storing and governing sensitive docu
 | Python 3.14.3 / Django 6.1.1 | Secure backend and ORM |
 | Django REST Framework 3.18.1 / Simple JWT 5.5.1 | REST API and JWT authentication |
 | PostgreSQL 18.6 / psycopg 3.3.5 | Relational persistence |
-| Django templates, CSS, vanilla JavaScript | Presentation-ready UI prototype |
+| React 19, Vite 7, Tailwind CSS 4, TypeScript | Responsive security dashboard frontend |
 | scikit-learn 1.9.1 | Isolation Forest anomaly detection |
 
 ## Project layout
@@ -76,12 +76,16 @@ Meaningful authentication and document actions are recorded by a server-side app
 
 An authorized Administrator or Auditor can run `POST /api/anomalies/run/`, check `/api/anomalies/status/`, and list/retrieve read-only results at `/api/anomalies/`. Training requires at least five active-user profiles; otherwise it explicitly returns `insufficient_data` and writes no results. Lower Isolation Forest decision scores are more anomalous; a negative score receives `ANOMALOUS`. Results are advisory only: they never disable users, block documents, or alter RBAC. The configured contamination (default `0.15`) and random seed (default `42`) are non-secret environment settings, and the in-memory model is not serialized.
 
-## UI prototype
+## React security dashboard
 
-The root route serves a Django template shell with a secure login, dashboard, document upload/list/detail/download workflow, profile, role-aware navigation, audit-chain verification, security overview, and read-only user list. It uses the existing REST APIs; JWTs are held only in browser session storage, while all authorization, encryption, and audit generation remain server-side. The Security page remains an audit-focused UI view; anomaly analysis is performed through its protected API.
+The new independent Vite application is in `frontend/`. It provides login, session-bound JWT refresh/logout, role-aware navigation, authorized document listing/upload/download/update/soft deletion, audit-chain verification, anomaly status/results/run controls, profile viewing, and the administrator user directory. It consumes only the documented backend API; no mock records, raw storage locations, encryption keys, or model artifacts are exposed.
+
+Start Django first with `venv\Scripts\python.exe backend\manage.py runserver`, then run `cd frontend`, `npm install`, and `npm run dev`. During local development Vite proxies `/api` to `http://127.0.0.1:8000`; override that non-secret target with `VITE_API_PROXY_TARGET` if needed. Production deployment must serve the frontend and API behind the same trusted origin/reverse proxy. See [frontend development notes](docs/frontend.md).
+
+The older Django-template UI files remain untouched as a legacy prototype. They can be reviewed for removal separately after the React dashboard is adopted.
 
 ## Known limitations
 
-The MVP reads plaintext into process memory during encryption/decryption and uses one application-level key. The audit hash chain is tamper-evident rather than immutable against a database administrator who can rewrite both events and chain state. Isolation Forest is unsupervised and has no labelled accuracy evaluation, persisted cross-process model artifact, automatic retraining schedule, or automated enforcement action. It has no malware scanning, key rotation/KMS, streamed encryption, or external audit checkpointing. Legacy Phase 3 documents remain marked unencrypted and cannot use the secure download endpoint until re-uploaded.
+The MVP reads plaintext into process memory during encryption/decryption and uses one application-level key. The audit hash chain is tamper-evident rather than immutable against a database administrator who can rewrite both events and chain state. Isolation Forest is unsupervised and has no labelled accuracy evaluation, persisted cross-process model artifact, automatic retraining schedule, or automated enforcement action. The frontend uses bearer tokens in browser session storage because the current backend has no secure-cookie JWT mode; an XSS vulnerability could still access that session. It has no malware scanning, key rotation/KMS, streamed encryption, external audit checkpointing, or frontend end-to-end tests. Legacy Phase 3 documents remain marked unencrypted and cannot use the secure download endpoint until re-uploaded.
 
 See `docs/` for architecture and data design, and `IMPLEMENTATION_LOG.md` for a chronological record.

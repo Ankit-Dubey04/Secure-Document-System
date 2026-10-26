@@ -37,3 +37,7 @@ The service trains only on explicit authorized run requests, not status/list/det
 ## UI prototype
 
 `Django template shell → vanilla JavaScript → existing JWT REST APIs → existing authorization/document/audit services`. The UI contains no cryptographic or authorization business logic. Role-aware navigation is a usability layer only; backend APIs remain the authority. Static source assets are in `backend/static/ui/`, templates in `backend/templates/ui/`, and collected deployment assets use `STATIC_ROOT`.
+
+## Phase 7 React frontend
+
+`React/Vite SPA → centralized API client → same-origin /api or local Vite proxy → Django REST APIs`. The frontend is in the root `frontend/` directory and has no direct database, storage, cryptographic, or ML access. It uses the backend's JSON JWT contract, keeps tokens in browser session storage for the current tab/session, refreshes once after a 401, and lets backend permissions decide every sensitive operation. The earlier Django-template UI remains a separate legacy prototype pending a later cleanup review.
