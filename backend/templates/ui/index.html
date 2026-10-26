@@ -1,0 +1,22 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SecureDocs | Zero-Trust Document System</title>
+  <link rel="stylesheet" href="{% static 'ui/app.css' %}">
+</head>
+<body>
+  <main id="login-screen" class="login-wrap">
+    <section class="login-card"><p class="eyebrow">ZERO-TRUST PLATFORM</p><h1>SecureDocs</h1><p>Protected legal and investigative document management.</p>
+      <form id="login-form"><label>Email<input id="email" type="email" required autocomplete="email"></label><label>Password<input id="password" type="password" required autocomplete="current-password"></label><button>Sign in securely</button><p id="login-error" class="error" role="alert"></p></form>
+    </section>
+  </main>
+  <div id="app" class="app hidden">
+    <aside><div class="brand">◆ SecureDocs</div><nav id="navigation">
+      <button data-page="dashboard">Dashboard</button><button data-page="documents">Documents</button><button data-page="audit" data-role="ADMIN,AUDITOR">Audit Logs</button><button data-page="security" data-role="ADMIN,AUDITOR">Security</button><button data-page="users" data-role="ADMIN">Users</button><button data-page="profile">Profile</button>
+    </nav><button id="logout" class="logout">Log out</button></aside>
+    <section class="workspace"><header><div><p class="eyebrow">SECURITY OPERATIONS</p><h2 id="page-title">Dashboard</h2></div><div id="identity"></div></header><p id="notice" role="status"></p><div id="content"></div></section>
+  </div>
+  <script src="{% static 'ui/app.js' %}"></script>
+</body></html>

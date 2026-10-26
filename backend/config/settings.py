@@ -37,7 +37,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 ROOT_URLCONF = "config.urls"
-TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [], "APP_DIRS": True,
+TEMPLATES = [{"BACKEND": "django.template.backends.django.DjangoTemplates", "DIRS": [BASE_DIR / "templates"], "APP_DIRS": True,
               "OPTIONS": {"context_processors": ["django.template.context_processors.request", "django.contrib.auth.context_processors.auth", "django.contrib.messages.context_processors.messages"]}}]
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
@@ -60,7 +60,18 @@ TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = PROJECT_ROOT / "staticfiles"
 MEDIA_ROOT = Path(os.environ.get("DOCUMENT_STORAGE_ROOT", str(PROJECT_ROOT / "private_media")))
 MEDIA_URL = "/private-media/"
 DOCUMENT_ENCRYPTION_KEY = os.environ.get("DOCUMENT_ENCRYPTION_KEY")
+# Phase 6 model controls are deployment configuration, not API input.  The
+# defaults make runs reproducible while allowing a security operator to tune
+# the expected outlier rate without changing source code.
+ANOMALY_ISOLATION_FOREST_CONTAMINATION = float(
+    os.environ.get("ANOMALY_ISOLATION_FOREST_CONTAMINATION", "0.15")
+)
+ANOMALY_ISOLATION_FOREST_RANDOM_STATE = int(
+    os.environ.get("ANOMALY_ISOLATION_FOREST_RANDOM_STATE", "42")
+)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -97,3 +97,31 @@
 **Migration status:** Created and applied `audit.0001_initial`.
 
 **Current status:** Completed and ready for a user-approved v0.6.0 release. Phase 2 authentication regression passed 10 tests; Phase 3/4 document and cryptography regression passed 19 tests; Phase 5 audit tests passed 10 tests. Django checks passed with no pending migration operations.
+
+## 2026-09-15 — Django UI prototype
+
+**Feature implemented:** Added a presentation-oriented Django-template interface layered over the existing JWT APIs. It includes login/logout, dashboard metrics from authorized documents, document management/upload/download, profile, role-aware navigation, audit viewing and verification, security-event visualization, and administrator user listing.
+
+**Files created or modified:** `backend/templates/ui/index.html`, `backend/static/ui/{app.css,app.js}`, `backend/config/{settings.py,urls.py,ui_views.py,tests.py}`, README, and architecture/security/API documentation.
+
+**Technical decisions:** The UI uses Django templates, static files, and vanilla JavaScript—no Node or frontend framework dependency. Tokens are held only in session storage, and every operation calls an existing backend endpoint. No aggregation or demo endpoint was added; metrics use only data already authorized for the caller. `STATIC_ROOT` was added for collectstatic-compatible deployment.
+
+**How it works:** The root route serves the UI shell. Login calls the real email/JWT login API; a transparent refresh attempt is made only after an expired API request. Upload/download flows call the existing encrypted document APIs. Audit and Security pages are shown only to Administrator/Auditor roles for UX, while backend RBAC remains definitive. AI anomaly detection is visibly deferred to Phase 6.
+
+**Testing performed:** The UI template test passed. Existing explicit application tests and final verification are recorded with the UI change.
+
+**Current status:** Completed as a UI prototype; no new release tag created.
+
+## 2026-10-26 — Phase 6 advisory anomaly detection
+
+**Feature implemented:** Added a real, audit-driven anomaly detection subsystem using `scikit-learn` Isolation Forest. It aggregates server-generated audit events per active user over a configurable 1–90 day window, stores safe advisory detections, and provides protected analysis/status/list/detail APIs.
+
+**Files created or modified:** `backend/apps/anomaly_detection/{models.py,admin.py,serializers.py,services/anomaly.py,urls.py,views.py,tests.py,migrations/0001_initial.py}`, project settings/URLs, pinned requirements, and the README plus architecture, security, database, and API documentation.
+
+**Technical decisions:** The stable `audit-profile-v1` feature order is total events, login outcomes, document views/downloads/mutations, denied attempts, distinct document identifiers, and off-hours activity under `Asia/Kolkata`. It excludes raw metadata, credentials, keys, contents, and identifiers as numerical features. `IsolationForest` uses a deterministic random state and configurable non-secret contamination setting. A minimum of five active-user profiles prevents fabricated conclusions from sparse data. The process-memory model is never serialized; persisted results retain only safe aggregate features and versions. Atomic upserts make a repeated daily-bounded run idempotent.
+
+**How it works:** Administrator/Auditor-only `POST /api/anomalies/run/` trains on the requested window and records a safe `SYSTEM_EVENT`. The feature query excludes that operational event to prevent recursive feedback. Lower decision scores are more anomalous; negative scores are `ANOMALOUS`. Results are advisory only and never affect authentication, authorization, documents, or accounts.
+
+**Testing performed:** `manage.py test apps.anomaly_detection --noinput` passed 5 tests for feature extraction, empty/insufficient data, malformed window input, reproducibility, anomalous-score semantics, idempotent result storage, authentication/RBAC, safe API output, and analysis-run audit recording. Final regression also passed audit (10), authentication (10), and document (19) app suites. Project-level discovery found zero tests because this layout uses app-label test discovery. Django checks passed; migration drift checks found no changes.
+
+**Migration status:** Created and applied `anomaly_detection.0001_initial` to the local database.

@@ -32,6 +32,12 @@ Phase 4 adds `plaintext_sha256` (lowercase 64-character original-content digest)
 
 Audit records are application-append-only: no create/update/delete API exists, and Django admin disables normal mutations for both the event and state models. Database-level append-only permissions are not part of this MVP.
 
+## Anomaly result schema
+
+`anomaly_detection_anomalydetectionresult` stores advisory output rather than raw model artifacts. It has a foreign key to the subject user, bounded aggregation `window_start`/`window_end`, a floating-point Isolation Forest decision score, `NORMAL`/`ANOMALOUS` classification, model and feature-schema versions, safe aggregate feature summary, detection timestamp, and review flag. The unique constraint on `(subject_user, window_start, window_end, model_version)` makes re-running the same daily-bounded window idempotent. An index on classification/detection timestamp supports security review queries.
+
+No password, token, encryption key, audit metadata, document body, or serialized model is stored in this table. The initial schema is supplied by `anomaly_detection.0001_initial`.
+
 ## Planned relations
 
-Future explicit document permissions, audit entries, security events, activities, and anomaly results will reference users and resources through foreign keys or controlled identifiers.
+Future explicit document permissions, security events, and activities will reference users and resources through foreign keys or controlled identifiers.

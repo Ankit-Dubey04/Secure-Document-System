@@ -18,12 +18,20 @@
 | `/api/documents/<uuid>/download/` | GET | Active JWT + object policy | Decrypts and SHA-256 verifies an encrypted document before returning an attachment. Returns generic 422 without plaintext on cryptographic/integrity failure. |
 | `/api/audit/` | GET | Administrator or Auditor JWT | Read-only audit events; supports exact server-side event/outcome/resource/user filters. |
 | `/api/audit/verify/` | GET | Administrator or Auditor JWT | Returns safe hash-chain verification status. |
+| `/api/anomalies/status/` | GET | Administrator or Auditor JWT | Returns safe model/version/status capabilities, not model internals. |
+| `/api/anomalies/run/` | POST | Administrator or Auditor JWT | Runs advisory analysis for `window_days` 1–90 (default 7) and audits the operation. |
+| `/api/anomalies/` | GET | Administrator or Auditor JWT | Lists up to 200 persisted safe anomaly results, newest first. |
+| `/api/anomalies/<id>/` | GET | Administrator or Auditor JWT | Retrieves one persisted safe anomaly result. |
 
 Audit APIs are read-only. Unauthorized authenticated audit requests are recorded as denied security events; unauthenticated requests return 401 without a user association. Audit response metadata is sanitized and does not include credentials, tokens, keys, cookies, or request bodies.
 
+The anomaly run response contains `trained` with processed result count or `insufficient_data` when fewer than five active-user profiles exist. For trained data, lower scores are more anomalous and negative scores have the `ANOMALOUS` classification. Result data contains aggregate feature counts only. Invalid/non-numeric windows, or values outside 1–90, return 400; unauthenticated and unauthorized callers receive 401/403.
+
+The UI prototype consumes the documented authentication, documents, audit, and admin-only users endpoints directly. It does not add a dashboard aggregation API: document counts are derived client-side from the caller's authorized document list, and audit/security panels use only the caller-authorized audit list.
+
 ## Planned API groups
 
-`/api/audit/`, `/api/security/`, and `/api/anomalies/` remain reserved for later phases.
+`/api/security/` remains reserved for a later phase.
 
 ## Document request constraints
 

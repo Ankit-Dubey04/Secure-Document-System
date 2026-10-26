@@ -17,14 +17,17 @@ Including another URLconf
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from .ui_views import application_shell
 
 def api_health(_request):
     return JsonResponse({"status": "ok", "service": "secure-document-management-api"})
 
 urlpatterns = [
+    path("", application_shell, name="application-shell"),
     path('admin/', admin.site.urls),
     path("api/health/", api_health, name="api-health"),
     path("api/auth/", include("apps.authentication.urls")),
     path("api/documents/", include("apps.documents.urls")),
     path("api/audit/", include("apps.audit.urls")),
+    path("api/anomalies/", include("apps.anomaly_detection.urls")),
 ]
